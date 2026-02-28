@@ -2,10 +2,16 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from .models import Task
 from .serializers import TaskSerializer
+from .filters import TaskFilter
 
 class TaskViewSet(ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
+
+    filterset_class = TaskFilter
+    search_fields = ["title", "description"]
+    ordering_fields = ["created_at", "updated_at", "title", "completed"]
+    ordering = ["-created_at"]
 
     def get_queryset(self):
         return Task.objects.filter(owner=self.request.user)
