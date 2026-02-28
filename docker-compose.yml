@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: todo
+      POSTGRES_USER: todo
+      POSTGRES_PASSWORD: todo
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U todo -d todo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    env_file:
+      - ./backend/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
+
+volumes:
+  pgdata:
