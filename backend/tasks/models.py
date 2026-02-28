@@ -22,6 +22,12 @@ class Task(models.Model):
         related_name="tasks"
     )
 
+    shared_with = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name="shared_tasks",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
