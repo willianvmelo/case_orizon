@@ -118,6 +118,9 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+
+    "DEFAULT_PAGINATION_CLASS": "common.pagination.DefaultPagination",
+    "PAGE_SIZE": 10,
 }
 
 # Joser
