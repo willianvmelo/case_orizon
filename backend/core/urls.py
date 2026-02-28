@@ -7,4 +7,8 @@ urlpatterns = [
     path("api/health/", health),
     path("api/tasks/", include("tasks.urls")),
     path("api/categories/", include("categories.urls")),
+    
+    # Auth
+    path("api/auth/", include("djoser.urls")),
+    path("api/auth/", include("djoser.urls.jwt")),
 ]
