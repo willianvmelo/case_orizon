@@ -58,4 +58,8 @@ class TaskViewSet(ModelViewSet):
         users = list(User.objects.filter(email__in=ser.validated_data["emails"]))
         task.shared_with.remove(*users)
 
-        return Response({"shared_added": len(users), "shared_with_emails": TaskSerializer(task).data["shared_with_emails"]})    
+        return Response({
+        "shared_removed": len(users),
+        "shared_with_emails": list(task.shared_with.values_list("email", flat=True)),
+        }
+)   
