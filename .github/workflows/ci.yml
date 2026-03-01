@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: todo
+          POSTGRES_USER: todo
+          POSTGRES_PASSWORD: todo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U todo -d todo"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      # Ajuste se o seu settings usa nomes diferentes
+      DJANGO_SECRET_KEY: "ci-secret-key"
+      DEBUG: "0"
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      POSTGRES_DB: "todo"
+      POSTGRES_USER: "todo"
+      POSTGRES_PASSWORD: "todo"
+      POSTGRES_HOST: "127.0.0.1"
+      POSTGRES_PORT: "5432"
+      
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run migrations
+        working-directory: backend
+        run: |
+          python manage.py migrate
+
+      - name: Run tests
+        working-directory: backend
+        run: |
+          pytest -q
