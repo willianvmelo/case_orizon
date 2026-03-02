@@ -13,6 +13,9 @@ export default function TasksPage() {
   const [completed, setCompleted] = useState<CompletedFilter>("");
   const [page, setPage] = useState(1);
 
+  const [search, setSearch] = useState("");
+  const [ordering, setOrdering] = useState("-created_at");
+
   const [data, setData] = useState<Paginated<Task>>({
     count: 0,
     next: null,
@@ -24,7 +27,7 @@ export default function TasksPage() {
   const [error, setError] = useState("");
 
   const totalPages = useMemo(() => {
-    const pageSize = 10; // DRF PAGE_SIZE
+    const pageSize = 10;
     return Math.max(1, Math.ceil(data.count / pageSize));
   }, [data.count]);
 
@@ -34,7 +37,10 @@ export default function TasksPage() {
 
     try {
       const params: Record<string, any> = { page };
+
       if (completed !== "") params.completed = completed;
+      if (search.trim()) params.search = search.trim();
+      if (ordering) params.ordering = ordering;
 
       const res = await listTasks(params);
       setData(res);
@@ -56,7 +62,12 @@ export default function TasksPage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, completed]);
+  }, [page, completed, ordering]);
+
+  function onApplySearch() {
+    setPage(1);
+    load();
+  }
 
   async function onCreate(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -114,7 +125,7 @@ export default function TasksPage() {
         <button onClick={logout}>Sair</button>
       </div>
 
-      <div style={{ marginTop: 16, display: "flex", gap: 12, alignItems: "center" }}>
+      <div style={{ marginTop: 16, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <label>
           Status:&nbsp;
           <select
@@ -129,6 +140,42 @@ export default function TasksPage() {
             <option value="true">Concluídas</option>
           </select>
         </label>
+
+        <label>
+          Ordenar por:&nbsp;
+          <select
+            value={ordering}
+            onChange={(e) => {
+              setPage(1);
+              setOrdering(e.target.value);
+            }}
+          >
+            <option value="-created_at">Mais recentes</option>
+            <option value="created_at">Mais antigas</option>
+            <option value="title">Título (A–Z)</option>
+            <option value="-title">Título (Z–A)</option>
+            <option value="completed">Concluídas primeiro</option>
+            <option value="-completed">Pendentes primeiro</option>
+            <option value="-updated_at">Última atualização</option>
+          </select>
+        </label>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onApplySearch();
+          }}
+          style={{ display: "flex", gap: 8, alignItems: "center" }}
+        >
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por título/descrição"
+          />
+          <button type="submit" disabled={loading}>
+            Buscar
+          </button>
+        </form>
 
         <div style={{ marginLeft: "auto" }}>
           <small>
