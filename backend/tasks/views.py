@@ -24,7 +24,12 @@ class TaskViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return Task.objects.filter(Q(owner=user) | Q(shared_with=user)).distinct()
+        return (
+        Task.objects
+        .select_related("category")
+        .filter(Q(owner=user) | Q(shared_with=user))
+        .distinct()
+    )
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)

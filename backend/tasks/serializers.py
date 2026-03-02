@@ -6,11 +6,12 @@ User = get_user_model()
 
 class TaskSerializer(serializers.ModelSerializer):
     shared_with_emails = serializers.SerializerMethodField()
+    category_name = serializers.CharField(source="category.name", read_only=True)
 
     class Meta:
         model = Task
         fields = [
-            "id", "title", "description", "completed", "category",
+            "id", "title", "description", "completed", "category","category_name",
             "shared_with_emails",
             "created_at", "updated_at",
         ]

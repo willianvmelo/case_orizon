@@ -6,6 +6,7 @@ export type Task = {
   description: string;
   completed: boolean;
   category: number | null;
+  category_name?: string | null;
   created_at: string;
   updated_at: string;
 };
