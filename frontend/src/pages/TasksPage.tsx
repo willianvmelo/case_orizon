@@ -8,7 +8,17 @@ import type { Task, Paginated } from "../api/tasks";
 import { createCategory, listCategories } from "../api/categories";
 import type { Category } from "../api/categories";
 
+import { shareTask, unshareTask } from "../api/sharing";
+import type { ShareResult } from "../api/sharing";
+
 type CompletedFilter = "" | "true" | "false";
+
+function parseEmails(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 export default function TasksPage() {
   const navigate = useNavigate();
@@ -27,6 +37,12 @@ export default function TasksPage() {
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | "">("");
+
+  // Share modal
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareTaskItem, setShareTaskItem] = useState<Task | null>(null);
+  const [shareEmailsRaw, setShareEmailsRaw] = useState("");
+  const [shareMsg, setShareMsg] = useState("");
 
   // Data
   const [data, setData] = useState<Paginated<Task>>({
@@ -81,7 +97,6 @@ export default function TasksPage() {
 
       setCategories(items);
 
-      // Default: se tiver categoria e nada selecionado, seleciona a primeira
       if (items.length > 0 && selectedCategoryId === "") {
         setSelectedCategoryId(items[0].id);
       }
@@ -114,11 +129,8 @@ export default function TasksPage() {
 
     try {
       const created = await createCategory({ name });
-
       setNewCategoryName("");
       setCategories((prev) => [created, ...prev]);
-
-      // Seleciona automaticamente a categoria recém-criada
       setSelectedCategoryId(created.id);
     } catch (err: any) {
       if (handleAuthError(err)) return;
@@ -162,6 +174,88 @@ export default function TasksPage() {
     } catch (err: any) {
       if (handleAuthError(err)) return;
       setError("Erro ao atualizar task");
+    }
+  }
+
+  function openShareModal(t: Task) {
+    setShareTaskItem(t);
+    setShareEmailsRaw("");
+    setShareMsg("");
+    setShareOpen(true);
+  }
+
+  function closeShareModal() {
+    setShareOpen(false);
+    setShareTaskItem(null);
+    setShareEmailsRaw("");
+    setShareMsg("");
+  }
+
+  function formatShareResult(r: ShareResult) {
+    if (typeof r.shared_added === "number") return `Compartilhados: +${r.shared_added}`;
+    if (typeof r.shared_removed === "number") return `Removidos: -${r.shared_removed}`;
+    return "OK";
+  }
+
+  async function onShare() {
+    if (!shareTaskItem) return;
+    setShareMsg("");
+
+    const emails = parseEmails(shareEmailsRaw);
+    if (emails.length === 0) {
+      setShareMsg("Informe ao menos 1 email (separado por vírgula).");
+      return;
+    }
+
+    try {
+      const r = await shareTask(shareTaskItem.id, { emails });
+      setShareMsg(formatShareResult(r));
+      await loadTasks();
+    } catch (err: any) {
+      if (handleAuthError(err)) return;
+
+      const status = err?.response?.status;
+      if (status === 403) {
+        setShareMsg("Você não pode compartilhar esta task (apenas o owner).");
+        return;
+      }
+      if (status === 404) {
+        setShareMsg("Task não encontrada (ou você não tem acesso).");
+        return;
+      }
+
+      setShareMsg("Erro ao compartilhar.");
+    }
+  }
+
+  async function onUnshare() {
+    if (!shareTaskItem) return;
+    setShareMsg("");
+
+    const emails = parseEmails(shareEmailsRaw);
+    if (emails.length === 0) {
+      setShareMsg("Informe ao menos 1 email (separado por vírgula).");
+      return;
+    }
+
+    try {
+      const r = await unshareTask(shareTaskItem.id, { emails });
+      setShareMsg(formatShareResult(r));
+      await loadTasks();
+    } catch (err: any) {
+      if (handleAuthError(err)) return;
+
+      const status = err?.response?.status;
+      if (status === 403) {
+        setShareMsg("Você não pode remover compartilhamento (apenas o owner).");
+        return;
+      }
+      if (status === 404) {
+        setShareMsg("Task não encontrada (ou você não tem acesso).");
+        return;
+      }
+
+      setShareMsg("Erro ao remover compartilhamento.");
     }
   }
 
@@ -212,11 +306,7 @@ export default function TasksPage() {
           <div>
             <h4 style={{ margin: "0 0 8px 0" }}>Task</h4>
             <form onSubmit={onCreateTask} style={{ display: "grid", gap: 8 }}>
-              <input
-                placeholder="Título"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-              />
+              <input placeholder="Título" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
 
               <textarea
                 placeholder="Descrição (opcional)"
@@ -244,12 +334,6 @@ export default function TasksPage() {
                 Adicionar task
               </button>
             </form>
-
-            <div style={{ marginTop: 10, color: "#666" }}>
-              <small>
-                Dica: ao criar categoria, ela já fica selecionada para a próxima task.
-              </small>
-            </div>
           </div>
         </aside>
 
@@ -298,11 +382,7 @@ export default function TasksPage() {
               }}
               style={{ display: "flex", gap: 8, alignItems: "center" }}
             >
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar"
-              />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar" />
               <button type="submit" disabled={loading}>
                 Buscar
               </button>
@@ -332,17 +412,16 @@ export default function TasksPage() {
                     </div>
 
                     {t.description?.trim() && (
-                      <div style={{ marginTop: 8, color: "#333", whiteSpace: "pre-wrap" }}>
-                        {t.description}
-                      </div>
+                      <div style={{ marginTop: 8, color: "#333", whiteSpace: "pre-wrap" }}>{t.description}</div>
                     )}
 
                     
                   </div>
 
-                  <button onClick={() => onToggleCompleted(t)}>
-                    {t.completed ? "Pendente" : "Concluir"}
-                  </button>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <button onClick={() => onToggleCompleted(t)}>{t.completed ? "Pendente" : "Concluir"}</button>
+                    <button onClick={() => openShareModal(t)}>Compartilhar</button>
+                  </div>
                 </div>
               </li>
             ))}
@@ -359,6 +438,61 @@ export default function TasksPage() {
           </div>
         </main>
       </div>
+
+      {/* Share Modal */}
+      {shareOpen && shareTaskItem && (
+        <div
+          onClick={closeShareModal}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "min(520px, 100%)",
+              background: "#fff",
+              borderRadius: 12,
+              padding: 14,
+              border: "1px solid #ddd",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+              <h3 style={{ margin: 0 }}>Compartilhar Task</h3>
+              <button onClick={closeShareModal}>Fechar</button>
+            </div>
+
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontWeight: 600 }}>{shareTaskItem.title}</div>
+              <small style={{ color: "#666" }}>id: {shareTaskItem.id}</small>
+            </div>
+
+            <div style={{ marginTop: 12, display: "grid", gap: 8 }}>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: 13, color: "#444" }}>E-mails (separados por vírgula)</span>
+                <input
+                  value={shareEmailsRaw}
+                  onChange={(e) => setShareEmailsRaw(e.target.value)}
+                  placeholder="ex: bob@b.com, carol@c.com"
+                />
+              </label>
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button onClick={onShare}>Compartilhar</button>
+                <button onClick={onUnshare}>Remover compartilhamento</button>
+              </div>
+
+              {shareMsg && <div style={{ marginTop: 6, color: "#333" }}>{shareMsg}</div>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
