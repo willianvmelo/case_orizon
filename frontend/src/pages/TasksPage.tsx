@@ -154,8 +154,8 @@ export default function TasksPage() {
             <option value="created_at">Mais antigas</option>
             <option value="title">Título (A–Z)</option>
             <option value="-title">Título (Z–A)</option>
-            <option value="completed">Concluídas primeiro</option>
-            <option value="-completed">Pendentes primeiro</option>
+            <option value="completed">Pendentes primeiro</option>
+            <option value="-completed">Concluídas primeiro</option>
             <option value="-updated_at">Última atualização</option>
           </select>
         </label>
