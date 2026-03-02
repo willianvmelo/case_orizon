@@ -11,3 +11,4 @@ djangorestframework-simplejwt>=5.3,<6.0
 django-filter>=24.2,<25.0
 pytest>=8,<9
 pytest-django>=4.8,<5
+django-cors-headers>=4.4,<5

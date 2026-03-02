@@ -28,11 +28,13 @@ INSTALLED_APPS = [
     'djoser',
     'rest_framework.authtoken',
     'django_filters',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -142,3 +144,15 @@ DJOSER = {
     "LOGIN_FIELD": "username",
     "USER_CREATE_PASSWORD_RETYPE": True,
 }
+
+# CORS
+def env_list(name: str, default: list[str] | None = None) -> list[str]:
+    raw = os.environ.get(name)
+    if not raw:
+        return default or []
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+CORS_ALLOWED_ORIGINS = env_list(
+    "CORS_ALLOWED_ORIGINS",
+    default=["http://localhost:5173"],
+)
