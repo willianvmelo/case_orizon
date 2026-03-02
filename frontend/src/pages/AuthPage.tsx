@@ -96,10 +96,10 @@ export default function AuthPage() {
         <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 16 }}>
           <h3>Cadastro</h3>
           <form onSubmit={onRegister} style={{ display: "grid", gap: 10, marginTop: 12 }}>
-            <input value={rUsername} onChange={(e) => setRUsername(e.target.value)} placeholder="username" />
+            <input value={rUsername} onChange={(e) => setRUsername(e.target.value)} placeholder="usuário" />
             <input value={rEmail} onChange={(e) => setREmail(e.target.value)} placeholder="email" />
-            <input value={rPassword} onChange={(e) => setRPassword(e.target.value)} placeholder="password" type="password" />
-            <input value={rPassword2} onChange={(e) => setRPassword2(e.target.value)} placeholder="confirm password" type="password" />
+            <input value={rPassword} onChange={(e) => setRPassword(e.target.value)} placeholder="senha" type="password" />
+            <input value={rPassword2} onChange={(e) => setRPassword2(e.target.value)} placeholder="confirme a senha" type="password" />
             <button type="submit" disabled={loading}>
               {loading ? "Aguarde..." : "Criar conta e entrar"}
             </button>
@@ -110,8 +110,8 @@ export default function AuthPage() {
         <div style={{ border: "1px solid #ddd", borderRadius: 12, padding: 16 }}>
           <h3>Login</h3>
           <form onSubmit={onLogin} style={{ display: "grid", gap: 10, marginTop: 12 }}>
-            <input value={lUsername} onChange={(e) => setLUsername(e.target.value)} placeholder="username" />
-            <input value={lPassword} onChange={(e) => setLPassword(e.target.value)} placeholder="password" type="password" />
+            <input value={lUsername} onChange={(e) => setLUsername(e.target.value)} placeholder="usuário" />
+            <input value={lPassword} onChange={(e) => setLPassword(e.target.value)} placeholder="senha" type="password" />
             <button type="submit" disabled={loading}>
               {loading ? "Aguarde..." : "Entrar"}
             </button>
